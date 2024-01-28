@@ -1,0 +1,71 @@
+service: starship
+
+frameworkVersion: '2'
+
+plugins:
+  - serverless-openapi-documentation
+
+provider:
+  name: aws
+  runtime: nodejs12.x
+  lambdaHashingVersion: 20201221
+  environment:
+    DYNAMODB_TABLE: starshipsTable
+  iamRoleStatements:
+    - Effect: Allow
+      Action:
+        - dynamodb:Query
+        - dynamodb:Scan
+        - dynamodb:GetItem
+        - dynamodb:PutItem
+        - dynamodb:UpdateItem
+        - dynamodb:DeleteItem
+      Resource: "arn:aws:dynamodb:${opt:region, self:provider.region}:*:table/${self:provider.environment.DYNAMODB_TABLE}"
+
+custom:
+  documentation:
+    version: '1'
+    title: 'Straships API'
+    description: 'Starship api'
+      
+functions:
+  list:
+    handler: api/starship.list
+    events:
+      - httpApi:
+          path: /starships
+          method: get
+  get:
+    handler: api/starship.get
+    events:
+      - httpApi:
+          path: /starships/{id}
+          method: get
+  getInternal:
+    handler: api/starship.getInternal
+    events:
+      - httpApi:
+          path: /starships/internal/{nombre}
+          method: get
+  post:
+    handler: api/starship.post
+    events:
+      - httpApi:
+          path: /starships
+          method: post
+
+resources:
+      Resources:
+        starshipsTable:
+          Type: AWS::DynamoDB::Table
+          Properties:
+            TableName: starshipsTable
+            AttributeDefinitions:
+              - AttributeName: nombre
+                AttributeType: S
+            KeySchema:
+              - AttributeName: nombre
+                KeyType: HASH
+            ProvisionedThroughput:
+              ReadCapacityUnits: 1
+              WriteCapacityUnits: 1
